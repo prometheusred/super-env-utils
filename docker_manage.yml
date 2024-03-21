@@ -1,0 +1,94 @@
+---
+- name: Build and Deploy Docker Containers
+  hosts: "{{ target_host }}"
+  become: true
+  vars:
+    local_dockerfile_path: "{{ local_dockerfile_path }}"
+    image_name: "{{ image_name }}"
+    container_name: "{{ container_name }}"
+
+  tasks:
+    - name: Copy the Dockerfile to the remote host
+      ansible.builtin.copy:
+        src: "{{ local_dockerfile_path }}"
+        dest: "/tmp/Dockerfile"
+        mode: '0644'
+      tags: 
+        - build
+
+    - name: Build Docker image on the remote host
+      community.docker.docker_image:
+        build:
+          path: "/tmp/"
+          dockerfile: Dockerfile
+        name: "{{ image_name }}"
+        source: build
+      tags: 
+        - build
+
+    - name: Remove the Dockerfile from the remote host
+      ansible.builtin.file:
+        path: "/tmp/Dockerfile"
+        state: absent
+      tags: 
+        - build
+
+    - name: Run Docker container from the image
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        state: started
+        restart_policy: unless-stopped
+        # Add other container options here as needed
+      tags: 
+        - start
+
+    - name: Stop Docker container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: stopped
+      tags: 
+        - stop
+
+    - name: Clean up Docker container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent  # This stops the container if it's running and then removes it
+      tags: 
+        - cleanup
+
+    - name: Get information about all Docker images
+      community.docker.docker_image_info:
+      register: docker_images
+      tags:
+        - status
+
+    - name: Print basic information about Docker images
+      ansible.builtin.debug:
+        msg: |
+          Image: {{ item.RepoTags | default(['<unlabeled>:<none>']) | join(', ') }}
+          ID: {{ (item.Id | regex_replace('^sha256:', ''))[0:12] }}
+          Size: {{ (item.Size | float / (1024 * 1024)) | round(2) }} MB
+          Created: {{ (item.Created | regex_replace('T.*$', '')) }}
+      loop: "{{ docker_images.images }}"
+      loop_control:
+        label: "{{ (item.RepoTags | default(['<unlabeled>:<none>']) | first) if item.RepoTags else '<no tags available>' }}"
+      tags:
+        - status
+
+    - name: Gather information about all Docker containers
+      community.docker.docker_container_info:
+      register: docker_containers
+      tags:
+        - status
+
+    - name: Print basic information about Docker containers
+      ansible.builtin.debug:
+        msg: |
+          Container: {{ item.Names | join(', ') }}
+          Image: {{ item.Image }}
+          State: {{ item.State }}
+          Status: {{ item.Status }}
+      loop: "{{ docker_containers.containers | default([]) }}"
+      tags:
+        - status

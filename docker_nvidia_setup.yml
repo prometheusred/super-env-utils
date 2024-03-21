@@ -1,0 +1,34 @@
+---
+- name: Setup NVIDIA Container Toolkit
+  hosts: "{{ target_host }}"
+  become: true
+  tasks:
+    - name: Add the NVIDIA GPG key
+      ansible.builtin.get_url:
+        url: https://nvidia.github.io/libnvidia-container/gpgkey
+        dest: /tmp/nvidia-gpgkey
+      register: download_gpgkey
+      until: download_gpgkey is succeeded
+      retries: 5
+      delay: 2
+
+    - name: Dearmor the NVIDIA GPG key
+      ansible.builtin.shell:
+        cmd: gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg /tmp/nvidia-gpgkey
+        creates: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+    - name: Add NVIDIA Container Toolkit repository
+      ansible.builtin.blockinfile:
+        path: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+        block: |
+          deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/{{ ansible_distribution | lower }}{{ ansible_distribution_release }}/$(ARCH) /
+        create: yes
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install NVIDIA container toolkit
+      ansible.builtin.apt:
+        name: nvidia-container-toolkit
+        state: present
