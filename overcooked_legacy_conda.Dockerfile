@@ -1,6 +1,11 @@
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y wget git && \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    git \
+    libgl1-mesa-glx \
+    libglib2.0-0 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -9,7 +14,7 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
     bash /miniconda.sh -b -p /miniconda3 && \
     rm -rf /miniconda.sh
 
-RUN /miniconda3/bin/conda create -y --name py37 python=3.7 numpy==1.15.1 pandas==1.0.5 tensorflow-gpu==1.13.1 mpi4py notebook && \
+RUN /miniconda3/bin/conda create -y --name py37 python=3.7 numpy==1.15.1 pandas==1.0.5 tensorflow-gpu==1.13.1 opencv mpi4py notebook && \
     /miniconda3/bin/conda clean -a -y
 
 WORKDIR /usr/src/app
