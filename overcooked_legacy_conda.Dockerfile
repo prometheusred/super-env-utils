@@ -30,4 +30,4 @@ RUN /miniconda3/bin/conda run -n py37 ./install.sh
 EXPOSE 8888
 
 # Set the default command to run when starting the container
-CMD ["/miniconda3/envs/py37/bin/jupyter", "notebook", "--ip=0.0.0.0", "--allow-root", "--no-browser", "--NotebookApp.token=''", "--NotebookApp.password=''"]
+CMD ["/miniconda3/envs/py37/bin/jupyter", "notebook", "--ip=0.0.0.0", "--allow-root", "--no-browser"]
