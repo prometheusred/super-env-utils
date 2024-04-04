@@ -13,7 +13,7 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
     bash /miniconda.sh -b -p /miniconda3 && \
     rm -rf /miniconda.sh
 
-RUN /miniconda3/bin/conda create -y --name jaxmarl python=3.10 notebook && \
+RUN /miniconda3/bin/conda create -y --name jaxmarl python=3.10 notebook imageio && \
     /miniconda3/bin/conda clean -a -y
 
 WORKDIR /usr/src/app
@@ -29,4 +29,5 @@ ENV PYTHONPATH /usr/src/app/JaxMARL:$PYTHONPATH
 EXPOSE 8888
 
 # Set the default command to run when starting the container
-CMD ["/miniconda3/envs/jaxmarl/bin/jupyter", "notebook", "--ip=0.0.0.0", "--allow-root", "--no-browser"]
+CMD ["/miniconda3/bin/conda", "run", "-n", "jaxmarl", "--no-capture-output", "jupyter", "notebook", "--ip=0.0.0.0", "--allow-root", "--no-browser"]
+
