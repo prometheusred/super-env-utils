@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  jaxmarl:
+    image: jax_dev:latest
+    container_name: jax_dev_instance
+    volumes:
+      - ../JaxMARL:/usr/src/app
+    ports:
+      - "8888:8888"
+    shm_size: 16g
+    tty: true
+    stdin_open: true
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    command: >
+      bash -c "pip install -e . && jupyter notebook --ip=0.0.0.0 --allow-root --no-browser"
